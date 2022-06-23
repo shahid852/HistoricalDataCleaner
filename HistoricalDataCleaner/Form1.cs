@@ -29,48 +29,57 @@ namespace HistoricalDataCleaner
             if (dlgSrcFolder.ShowDialog() == DialogResult.OK)
             {
                 string srcFolder = dlgSrcFolder.SelectedPath;
+                lblFolderPath.Text = srcFolder;
                 var folder = new DirectoryInfo(srcFolder);
-                var srcCsvFilePaths = folder.GetFiles("*.csv");
-
-                //var config = new CsvHelper.Configuration.CsvConfiguration { };
-                //config.
-
-
+                var srcCsvFilePaths = folder.GetFiles("*.csv", SearchOption.TopDirectoryOnly);
+                Directory.CreateDirectory(srcFolder + "\\Outputs");
+                chkListInputFiles.Items.Clear();
                 foreach (FileInfo s in srcCsvFilePaths)
                 {
                     if (s.Name.EndsWith("-output.csv")) continue; //skip the output files
-                    //StreamReader sr = new StreamReader(s.FullName);
-                    StreamWriter sw = new StreamWriter(s.FullName.Replace(".csv", "") + "-output.csv");
+                    chkListInputFiles.Items.Add(s.Name, true);
 
-                    var sr = new StreamReader(s.FullName);
-                    //sr.Peek();
-                    string? line = sr.ReadLine();
-                    while (String.IsNullOrEmpty(line)) line = sr.ReadLine();
-
-                    if (!line.Contains(",")) line = sr.ReadLine(); // skip 1st line
-                    using (var csv = new CsvReader(sr, CultureInfo.InvariantCulture))
-                    {
-                        var records = csv.GetRecords<record>();
-
-                    }
-
-                    //while (sr.Peek() >= 0)
-                    //{
-                    //    //perform task related to file 
-                    //    string? line = sr.ReadLine();
-                    //    if (line == null) continue;
-                    //    if (!line.Contains(",")) continue;// skip 1st line
-
-
-                    //    sw.WriteLine(line);
-
-
-
-
-                    //}
-                    sr.Close();
-                    sw.Close();
                 }
+
+                ////var config = new CsvHelper.Configuration.CsvConfiguration { };
+                ////config.
+
+
+                //foreach (FileInfo s in srcCsvFilePaths)
+                //{
+                //    if (s.Name.EndsWith("-output.csv")) continue; //skip the output files
+                //    //StreamReader sr = new StreamReader(s.FullName);
+                //    StreamWriter sw = new StreamWriter(s.FullName.Replace(".csv", "") + "-output.csv");
+
+                //    var sr = new StreamReader(s.FullName);
+                //    //sr.Peek();
+                //    string? line = sr.ReadLine();
+                //    while (String.IsNullOrEmpty(line)) line = sr.ReadLine();
+
+                //    if (!line.Contains(",")) line = sr.ReadLine(); // skip 1st line
+                //    using (var csv = new CsvReader(sr, CultureInfo.InvariantCulture))
+                //    {
+                //        var records = csv.GetRecords<record>();
+
+                //    }
+
+                //    //while (sr.Peek() >= 0)
+                //    //{
+                //    //    //perform task related to file 
+                //    //    string? line = sr.ReadLine();
+                //    //    if (line == null) continue;
+                //    //    if (!line.Contains(",")) continue;// skip 1st line
+
+
+                //    //    sw.WriteLine(line);
+
+
+
+
+                //    //}
+                //    sr.Close();
+                //    sw.Close();
+                //}
             }
 
         }
