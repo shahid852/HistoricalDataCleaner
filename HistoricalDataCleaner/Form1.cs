@@ -104,6 +104,7 @@ namespace HistoricalDataCleaner
                 lblOutputFolderPath.Text = destFolder;
                 Directory.CreateDirectory(tempFolder);
                 Directory.CreateDirectory(destFolder);
+                DataTable grand_dt = new DataTable();
                 //var config = new CsvHelper.Configuration.CsvConfiguration { };
                 //config.
 
@@ -134,14 +135,14 @@ namespace HistoricalDataCleaner
                             columns = line_out.Split(",");
                             isColumnsLine = true;
                         }
-                        
-                        
+
+
                         /// make the unix date format consistent
                         string unixdate_orig = line_out.Split(",")[0];
                         line_out = line_out.Replace(unixdate_orig, "fillunixdatehere");
                         string unixdate_out = unixdate_orig.Replace(".0", "");
                         line_out = line_out.Replace("fillunixdatehere", unixdate_out);
-                        
+
                         ///////////////////////////////////////////////////////////
                         // make the dates format consistent
                         string date_orig = line_out.Split(",")[1];
@@ -156,7 +157,7 @@ namespace HistoricalDataCleaner
                         line_out = line_out.Replace("fillnewdatehere", date_out);
                         ////////////////////////////////////////////////////////////
 
-                        
+
 
                         // make the tradecount format consistent
                         string tradecount_orig = line_out.Split(",")[9];
@@ -197,6 +198,17 @@ namespace HistoricalDataCleaner
                             //dt.Columns.Add("tradecount", typeof(long));
 
                             dt.Load(dr);
+                            foreach (DataColumn c in dt.Columns)
+                            {
+                                c.ColumnName = c.ColumnName.ToLower().Replace(" ", "_");
+                                //if (c.ColumnName.StartsWith("Volume"))
+                                //  c.ColumnName = c.ColumnName.Split("_")[0]
+                            }
+                            dt.Columns[7].ColumnName = dt.Columns[7].ColumnName.Trim().Split("_")[0] + "_asset"; // Volume Asset
+                            dt.Columns[8].ColumnName = dt.Columns[8].ColumnName.Trim().Split("_")[0] + "_base"; // Volume Base
+
+
+
                         }
                     }
 
@@ -209,10 +221,13 @@ namespace HistoricalDataCleaner
                                             group rows by new { ColA = rows["Date"] } into grp
                                             select grp.First()).CopyToDataTable();
 
-                    distinctDT.Columns["Date"].ColumnName = "date";
-                    ToCSV(distinctDT, f_output.FullName);
-                    chkListOutputFiles.Items.Add(f_output.Name, true);
+                    //distinctDT.Columns["Date"].ColumnName = "date";
+                    grand_dt.Merge(distinctDT);
                 }
+
+                ToCSV(grand_dt, destFolder + "\\FinalOutput.csv");
+                chkListOutputFiles.Items.Add("FinalOutput.csv", true);
+
                 MessageBox.Show("Success");
             }
             catch (Exception ex)
