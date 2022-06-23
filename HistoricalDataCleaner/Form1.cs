@@ -107,7 +107,7 @@ namespace HistoricalDataCleaner
                 //var config = new CsvHelper.Configuration.CsvConfiguration { };
                 //config.
 
-                for (int i = 0; i < chkListInputFiles.Items.Count; i++)
+                for (int i = 0; i < chkListInputFiles.Items.Count; i++) // Loop on files
                 {
                     CheckState st = chkListInputFiles.GetItemCheckState(i);
                     if (st == CheckState.Unchecked)
@@ -120,13 +120,28 @@ namespace HistoricalDataCleaner
 
                     StreamReader sr_input = new StreamReader(f_input.FullName);
                     StreamWriter sw_temp = new StreamWriter(f_temp.FullName);
-
+                    bool isColumnsLine = false;
+                    string[] columns = new string[] { };
                     while (sr_input.Peek() >= 0)
                     {
                         string? line_in = sr_input.ReadLine();
                         if (String.IsNullOrEmpty(line_in)) continue; // skip blank lines
                         if (!line_in.Contains(",")) continue;// skip non comma lines
                         string line_out = line_in;
+
+                        if (isColumnsLine == false)
+                        { // run once for the columns only for each file
+                            columns = line_out.Split(",");
+                            isColumnsLine = true;
+                        }
+                        
+                        
+                        /// make the unix date format consistent
+                        string unixdate_orig = line_out.Split(",")[0];
+                        line_out = line_out.Replace(unixdate_orig, "fillunixdatehere");
+                        string unixdate_out = unixdate_orig.Replace(".0", "");
+                        line_out = line_out.Replace("fillunixdatehere", unixdate_out);
+                        
                         ///////////////////////////////////////////////////////////
                         // make the dates format consistent
                         string date_orig = line_out.Split(",")[1];
@@ -141,14 +156,14 @@ namespace HistoricalDataCleaner
                         line_out = line_out.Replace("fillnewdatehere", date_out);
                         ////////////////////////////////////////////////////////////
 
+                        
+
                         // make the tradecount format consistent
                         string tradecount_orig = line_out.Split(",")[9];
-                        line_out = line_out.Replace("NULL", "0");
-                        ///////////////////////////////////////////////////////////
+                        line_out = line_out.Replace(tradecount_orig, "filltchere");
+                        string tradecount_out = tradecount_orig.Replace("NULL", "0");
+                        line_out = line_out.Replace("filltchere", tradecount_out);
 
-                        /// make the unix date format consistent
-                        string unixdate = line_out.Split(",")[0];
-                        line_out = line_out.Replace(".0", "");
                         ///////////////////////////////////////////////////////////
 
                         sw_temp.WriteLine(line_out);
@@ -166,17 +181,20 @@ namespace HistoricalDataCleaner
                         // Do any configuration to `CsvReader` before creating CsvDataReader.
                         using (var dr = new CsvDataReader(csv))
                         {
-
-                            dt.Columns.Add("unix", typeof(long));
-                            dt.Columns.Add("Date", typeof(DateTime));
-                            dt.Columns.Add("symbol", typeof(string));
-                            dt.Columns.Add("open", typeof(float));
-                            dt.Columns.Add("high", typeof(float));
-                            dt.Columns.Add("low", typeof(float));
-                            dt.Columns.Add("close", typeof(float));
-                            dt.Columns.Add("Volume BTC", typeof(decimal));
-                            dt.Columns.Add("Volume USDT", typeof(decimal));
-                            dt.Columns.Add("tradecount", typeof(long));
+                            foreach (string str in columns)
+                            {
+                                dt.Columns.Add(str);
+                            }
+                            //dt.Columns.Add("unix", typeof(long));
+                            //dt.Columns.Add("Date", typeof(DateTime));
+                            //dt.Columns.Add("symbol", typeof(string));
+                            //dt.Columns.Add("open", typeof(float));
+                            //dt.Columns.Add("high", typeof(float));
+                            //dt.Columns.Add("low", typeof(float));
+                            //dt.Columns.Add("close", typeof(float));
+                            //dt.Columns.Add("Volume BTC", typeof(decimal));
+                            //dt.Columns.Add("Volume USDT", typeof(decimal));
+                            //dt.Columns.Add("tradecount", typeof(long));
 
                             dt.Load(dr);
                         }
@@ -191,14 +209,18 @@ namespace HistoricalDataCleaner
                                             group rows by new { ColA = rows["Date"] } into grp
                                             select grp.First()).CopyToDataTable();
 
+                    distinctDT.Columns["Date"].ColumnName = "date";
                     ToCSV(distinctDT, f_output.FullName);
                     chkListOutputFiles.Items.Add(f_output.Name, true);
                 }
+                MessageBox.Show("Success");
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
+
+
 
         }
 
